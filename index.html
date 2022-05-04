@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=1000, initial-scale=1.0">
+  <title>ui-js-tree</title>
+  <script type="module" src="ui-js-tree.js"></script>
+  <style>
+    :root {
+      --tree-node-left-margin: 16px;
+      --tree-node-collapse-icon-color: #006688;
+      --tree-node-selected-background-color: #3399ee;
+    }
+
+    ui-js-tree:focus {
+      box-sizing: border-box;
+      border: 1px solid var(--tree-node-selected-background-color);
+    }
+  </style>
+</head>
+<body>
+  <ui-js-tree tabindex="0">
+    <ui-js-tree-node-container>
+      <ui-js-tree-node><span>Node 1</span></ui-js-tree-node>
+      <ui-js-tree-node>
+        <span>Node 2</span>
+      </ui-js-tree-node tabindex="0">
+      <ui-js-tree-node collapsed>
+        <span>Node 3</span>
+        <ui-js-tree-node-container>
+          <ui-js-tree-node>Node 31</ui-js-tree-node>
+          <ui-js-tree-node>Node 32</ui-js-tree-node>
+          <ui-js-tree-node>Node 33</ui-js-tree-node>
+          <ui-js-tree-node collapsed>
+            <span>Node 34</span>
+            <ui-js-tree-node-container>
+              <ui-js-tree-node>Node 341</ui-js-tree-node>
+              <ui-js-tree-node>Node 342</ui-js-tree-node>
+              <ui-js-tree-node>Node 343</ui-js-tree-node>
+            </ui-js-tree-node-container>
+          </ui-js-tree-node>
+        </ui-js-tree-node-container>
+      </ui-js-tree-node>
+      <ui-js-tree-node>Node 4</ui-js-tree-node>
+      <ui-js-tree-node>Node 5</ui-js-tree-node>
+      <ui-js-tree-node>Node 6</ui-js-tree-node>
+    </ui-js-tree-node-container>
+  </ui-js-tree>
+</body>
+</html>

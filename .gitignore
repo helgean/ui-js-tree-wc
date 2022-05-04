@@ -1,0 +1,5 @@
+/.storybook
+/node_modules
+/package.json
+/stories
+/yarn.lock
