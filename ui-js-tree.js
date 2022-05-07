@@ -8,6 +8,8 @@ const tpl = template`
     ui-js-tree-node {
       --tree-prefix-color: var(--tree-node-collapse-icon-color, black);
       --tree-arrow-size: var(--tree-node-collapse-arrow-size, 8px);
+      cursor: var(--tree-node-cursor, pointer);
+      outline: none;
     }
 
     ui-js-tree-node-container {
@@ -32,6 +34,20 @@ const tpl = template`
       border-top: var(--tree-arrow-size) solid var(--tree-prefix-color);
     }
 
+    ui-js-tree-node > span {
+      display: inline-block;
+      padding: var(--tree-node-text-padding, 2px);
+      margin: var(--tree-node-text-margin, 0);
+      border-radius: var(--tree-node-border-radius, 2px);
+      font-size: var(--tree-node-text-font-size, inherit);
+      font-family: var(--tree-node-text-font-family, inherit)
+    }
+
+    ui-js-tree-node > span:hover {
+      background-color: var(--tree-node-background-hover);
+      color: var(--tree-node-text-color-hover);
+    }
+
     ui-js-tree-node::before {
       content: " ";
       box-sizing: border-box;
@@ -50,6 +66,7 @@ const tpl = template`
 
     ui-js-tree-node.selected > span {
       background-color: var(--tree-node-selected-background-color, #336688);
+      color: var(--tree-node-selected-text-color);
     }
 
     ui-js-tree-node {
@@ -120,6 +137,10 @@ export class UiJsTree extends HTMLElement {
       else if (this.keyMap.toggle.indexOf(ev.key) > -1)
         this.toggleState();
     });
+
+    this.shadow.addEventListener('ui-js-tree-node-click', ev => {
+      this.setSelected(ev.target);
+    });
   }
 
   load(treeData) {
@@ -166,6 +187,13 @@ export class UiJsTree extends HTMLElement {
     nodeElement.classList.add('selected');
     this.selected = nodeElement;
     this.selected.focus();
+    this.dispatchEvent(new CustomEvent('ui-js-tree-node-selected', {
+      bubbles: true,
+      detail: {
+        node: this.selected,
+        data: this.selected.data
+      }
+    }));
   }
 
   findNextNode(fromNode) {

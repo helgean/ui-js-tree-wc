@@ -11,7 +11,15 @@
       --tree-node-left-margin: 16px;
       --tree-node-collapse-arrow-size: 7px;
       --tree-node-collapse-icon-color: #006688;
-      --tree-node-selected-background-color: #3399ee;
+      --tree-node-selected-background-color: #155a92;
+      --tree-node-selected-text-color: white;
+      --tree-node-background-hover: #a2bfd6;
+      --tree-node-text-color-hover: black;
+      --tree-node-text-padding: 4px;
+      --tree-node-text-margin: 2px;
+      --tree-node-text-font-family: Helvetica, sans-serif;
+      --tree-node-text-font-size: inherit;
+      --tree-node-border-radius: 3px;
     }
 
     ui-js-tree:focus {
@@ -47,6 +55,10 @@
     }, {
         text: 'node 4',
     }]);
+
+    document.querySelector('ui-js-tree').addEventListener('ui-js-tree-node-selected', ev => {
+      console.log(ev.detail.data);
+    });
   </script>
 </body>
 </html>

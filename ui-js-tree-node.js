@@ -31,8 +31,14 @@ export class UiJsTreeNode extends HTMLElement {
     }
 
     this.addEventListener('click', ev => {
-      this.collapsed = !this.collapsed;
       ev.stopPropagation();
+      this.collapsed = !this.collapsed;
+      this.dispatchEvent(new CustomEvent('ui-js-tree-node-click', {
+        bubbles: true,
+        detail: {
+          data: this.data
+        }
+      }));
     });
   }
 
@@ -80,14 +86,22 @@ export class UiJsTreeNode extends HTMLElement {
     if (!this.isParent)
       return;
 
-    if (value)
+    if (value) {
       this.setAttribute('collapsed', '');
-    else
+    } else {
       this.removeAttribute('collapsed');
+    }
 
     this.dispatchEvent(new CustomEvent('ui-js-tree-node-collapse-change', {
       detail: {
         collapsed: value
+      }
+    }));
+
+    this.dispatchEvent(new CustomEvent(value ? 'ui-js-tree-node-collapse' : 'ui-js-tree-node-expand', {
+      bubbles: true,
+      detail: {
+        data: this.data
       }
     }));
   }
