@@ -1,38 +1,36 @@
-import { template } from './lib/ui-js-lib.js';
-
-const tpl = template`
-  <style>
-    :host {
-      display: block;
-      width: fit-content;
-      padding-left: var(--tree-node-left-margin, 8px);
-    }
-  </style>
-  <slot></slot>
-`;
+import { UiJsTreeNode } from './ui-js-tree-node.js';
 
 export class UiJsTreeNodeContainer extends HTMLElement {
-  constructor() {
+  constructor(data, expandToLevel, currentLevel, lazy) {
     super();
-    this.shadow = this.attachShadow({mode: 'open'});
+    this._expandToLevel = expandToLevel;
+    this.level = currentLevel;
+    this._data = Array.isArray(data) ? data : [data];
+    this._loaded = false;
+    this.lazy = lazy;
   }
 
   async connectedCallback() {
-    tpl(this).render(this.shadow);
+    if (!this.lazy || !this.hidden) {
+      this.load();
+    }
 
-    this.hidden = this.parentElement.isParent && this.parentElement.collapsed;
-    this.setAttribute('tabindex', '-1');
+    if (this.parentElement)
+      this.parentElement.addEventListener('ui-js-tree-node-collapse-change', ev => {
+        if (!this._loaded && ev.detail.collapsed === false)
+          this.load();
+      });
+  }
+
+  load() {
+    for (let nodeData of this._data) {
+      this.appendChild(new UiJsTreeNode(nodeData, this._expandToLevel, this.level + 1, this.lazy));
+    }
+    this._loaded = true;
   }
 
   get hidden() {
-    return this.classList.contains('hidden');
-  }
-
-  set hidden(value) {
-    if (value)
-      this.classList.add('hidden');
-    else
-      this.classList.remove('hidden');
+    return this.parentElement ? this.parentElement.hasAttribute('collapsed') : false;
   }
 }
 

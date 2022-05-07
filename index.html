@@ -9,6 +9,7 @@
   <style>
     :root {
       --tree-node-left-margin: 16px;
+      --tree-node-collapse-arrow-size: 7px;
       --tree-node-collapse-icon-color: #006688;
       --tree-node-selected-background-color: #3399ee;
     }
@@ -20,32 +21,32 @@
   </style>
 </head>
 <body>
-  <ui-js-tree tabindex="0">
-    <ui-js-tree-node-container>
-      <ui-js-tree-node><span>Node 1</span></ui-js-tree-node>
-      <ui-js-tree-node>
-        <span>Node 2</span>
-      </ui-js-tree-node tabindex="0">
-      <ui-js-tree-node collapsed>
-        <span>Node 3</span>
-        <ui-js-tree-node-container>
-          <ui-js-tree-node>Node 31</ui-js-tree-node>
-          <ui-js-tree-node>Node 32</ui-js-tree-node>
-          <ui-js-tree-node>Node 33</ui-js-tree-node>
-          <ui-js-tree-node collapsed>
-            <span>Node 34</span>
-            <ui-js-tree-node-container>
-              <ui-js-tree-node>Node 341</ui-js-tree-node>
-              <ui-js-tree-node>Node 342</ui-js-tree-node>
-              <ui-js-tree-node>Node 343</ui-js-tree-node>
-            </ui-js-tree-node-container>
-          </ui-js-tree-node>
-        </ui-js-tree-node-container>
-      </ui-js-tree-node>
-      <ui-js-tree-node>Node 4</ui-js-tree-node>
-      <ui-js-tree-node>Node 5</ui-js-tree-node>
-      <ui-js-tree-node>Node 6</ui-js-tree-node>
-    </ui-js-tree-node-container>
-  </ui-js-tree>
+  <ui-js-tree expanded-level="1" lazy-load="true"></ui-js-tree>
+
+  <script type="module">
+    document.querySelector('ui-js-tree').load([{
+      text: 'node 1',
+      children: [{
+        text: 'node 1-1',
+      }, {
+        text: 'node 1-2',
+        children: [{
+          text: 'node 1-2-1',
+        }, {
+          text: 'node 1-2-2',
+        }, {
+          text: 'node 1-2-3',
+        }]
+      }, {
+        text: 'node 1-3',
+      }]
+    }, {
+        text: 'node 2',
+    }, {
+        text: 'node 3',
+    }, {
+        text: 'node 4',
+    }]);
+  </script>
 </body>
 </html>

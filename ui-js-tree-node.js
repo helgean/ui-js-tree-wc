@@ -1,73 +1,34 @@
 import { template } from './lib/ui-js-lib.js';
+import { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
 
 const tpl = template`
-<style>
-    :host {
-      --tree-prefix-color: var(--tree-node-collapse-icon-color, black);
-    }
-
-    :host(.parent.collapsed) > slot::slotted(ui-js-tree-node-container) {
-      display: none;
-    }
-
-    :host(.parent.collapsed)::before {
-      border-top: 8px solid transparent;
-      border-bottom: 8px solid transparent;
-      border-left: 8px solid var(--tree-prefix-color);
-    }
-
-    :host(.parent)::before {
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 8px solid var(--tree-prefix-color);
-    }
-
-    :host::before {
-      content: " ";
-      box-sizing: border-box;
-      border: 8px solid transparent;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    :host(.parent) {
-      cursor: pointer;
-    }
-
-    :host(.selected:not(.parent)) {
-      background-color: var(--tree-node-selected-background-color, #336688);
-    }
-
-    :host(.selected) slot::slotted(span) {
-      background-color: var(--tree-node-selected-background-color, #336688);
-    }
-
-    :host {
-      display: block;
-    }
-  </style>
-  <slot></slot>
+  <span>${'text'}</span>
 `;
 
 export class UiJsTreeNode extends HTMLElement {
-  constructor() {
+  constructor(data, expandToLevel, currentLevel, lazy) {
     super();
-    this._data = {};
-    this.shadow = this.attachShadow({mode: 'open'});
+    this._expandToLevel = expandToLevel;
+    this.level = currentLevel;
+    this.lazy = lazy;
+    this._data = data || {};
   }
 
   async connectedCallback() {
-    tpl(this).render(this.shadow);
-    this._text = this.getAttribute('text') || this.dataset.text || this.innerText;
-    this._value = this.getAttribute('value') || this.dataset.value || this.data.text;
+    this._text = this.data.text || this.getAttribute('text') || this.dataset.text || this.innerText;
+    this._value = this.data.value || this.getAttribute('value') || this.dataset.value || this._text;
+
+    tpl(this).render(this);
 
     this.setAttribute('tabindex', '-1');
 
-    if (this.isParent)
-      this.classList.add('parent');
+    if (this.isParent && !this.hasAttribute('collapsed') && this.level > this._expandToLevel)
+      this.setAttribute('collapsed', '');
 
-    if (this.hasAttribute('collapsed'))
-      this.classList.add('collapsed');
+    if (this.isParent) {
+      this.classList.add('parent');
+      this.appendChild(new UiJsTreeNodeContainer(this.data.children, this._expandToLevel, this.level, this.lazy));
+    }
 
     this.addEventListener('click', ev => {
       this.collapsed = !this.collapsed;
@@ -99,8 +60,12 @@ export class UiJsTreeNode extends HTMLElement {
     this._value = value;
   }
 
-  get isParent() {
+  get container() {
     return this.querySelector('ui-js-tree-node-container');
+  }
+
+  get isParent() {
+    return this.data.children && Array.isArray(this.data.children);
   }
 
   get hidden() {
@@ -108,17 +73,23 @@ export class UiJsTreeNode extends HTMLElement {
   }
 
   get collapsed() {
-    return this.isParent ? this.classList.contains('collapsed') : false;
+    return this.isParent ? this.hasAttribute('collapsed') : false;
   }
 
   set collapsed(value) {
     if (!this.isParent)
       return;
+
     if (value)
-      this.classList.add('collapsed');
+      this.setAttribute('collapsed', '');
     else
-      this.classList.remove('collapsed');
-    this.querySelector('ui-js-tree-node-container').hidden = value;
+      this.removeAttribute('collapsed');
+
+    this.dispatchEvent(new CustomEvent('ui-js-tree-node-collapse-change', {
+      detail: {
+        collapsed: value
+      }
+    }));
   }
 }
 

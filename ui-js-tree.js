@@ -1,18 +1,61 @@
 import { template } from './lib/ui-js-lib.js';
-import { UiJsTreeNode } from './ui-js-tree-node.js';
+import { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
 export { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
 export { UiJsTreeNode } from './ui-js-tree-node.js';
 
 const tpl = template`
-  <slot></slot>
-`;
+  <style>
+    ui-js-tree-node {
+      --tree-prefix-color: var(--tree-node-collapse-icon-color, black);
+      --tree-arrow-size: var(--tree-node-collapse-arrow-size, 8px);
+    }
 
-const nodeContainerTpl = template`
-  <ui-js-tree-node-container tabindex="-1"></ui-js-tree-node-container>
-`;
+    ui-js-tree-node-container {
+      display: block;
+      width: fit-content;
+      padding-left: var(--tree-node-left-margin, --tree-arrow-size);
+    }
 
-const nodeTpl = template`
-  <ui-js-tree-node tabindex="-1" text=""></ui-js-tree-node>
+    ui-js-tree-node.parent[collapsed] > ui-js-tree-node-container {
+      display: none;
+    }
+
+    ui-js-tree-node.parent[collapsed]::before {
+      border-top: var(--tree-arrow-size) solid transparent;
+      border-bottom: var(--tree-arrow-size) solid transparent;
+      border-left: var(--tree-arrow-size) solid var(--tree-prefix-color);
+    }
+
+    ui-js-tree-node.parent::before {
+      border-left: var(--tree-arrow-size) solid transparent;
+      border-right: var(--tree-arrow-size) solid transparent;
+      border-top: var(--tree-arrow-size) solid var(--tree-prefix-color);
+    }
+
+    ui-js-tree-node::before {
+      content: " ";
+      box-sizing: border-box;
+      border: var(--tree-arrow-size) solid transparent;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    ui-js-tree-node.parent {
+      cursor: pointer;
+    }
+
+    ui-js-tree-node.selected:not(.parent) > span {
+      background-color: var(--tree-node-selected-background-color, #336688);
+    }
+
+    ui-js-tree-node.selected > span {
+      background-color: var(--tree-node-selected-background-color, #336688);
+    }
+
+    ui-js-tree-node {
+      display: block;
+    }
+  </style>
 `;
 
 export class UiJsTree extends HTMLElement {
@@ -44,7 +87,8 @@ export class UiJsTree extends HTMLElement {
   }
 
   async connectedCallback() {
-    tpl(this).render(this.shadow);
+
+    this.lazy = this.getAttribute('lazy-load') == 'true';
 
     this.buildNodeMapFromDescendants();
 
@@ -78,10 +122,11 @@ export class UiJsTree extends HTMLElement {
     });
   }
 
-  load(treedata) {
-    this.shadow.innerHTML = '';
-    // TODO: generate tree nodes
-
+  load(treeData) {
+    tpl(this).render(this.shadow);
+    // generate tree node elements
+    const levelExpand = this.hasAttribute("expanded-level") ? (parseInt(this.getAttribute("expanded-level")) || 2) : 2;
+    this.shadow.appendChild(new UiJsTreeNodeContainer(treeData, levelExpand, 0, this.lazy));
     this.buildNodeMapFromDescendants();
   }
 
@@ -95,23 +140,22 @@ export class UiJsTree extends HTMLElement {
   }
 
   getVisibleNodeList() {
-    return [...this.querySelectorAll('ui-js-tree-node-container:not(.hidden) > ui-js-tree-node')];
+    return [...this.shadow.querySelectorAll('ui-js-tree-node-container:not(.hidden) > ui-js-tree-node')];
   }
 
-  traverseDownTree(fromNode) {
-    if (fromNode.isParent && !fromNode.collapsed)
-      return fromNode.querySelector('ui-js-tree-node-container:not(.hidden) > ui-js-tree-node');
-    const sibling = fromNode.nextElementSibling;
-    if (sibling && sibling instanceof UiJsTreeNode)
-      return sibling;
-    return fromNode.querySelector('ui-js-tree-node-container:not(.hidden) > ui-js-tree-node');
-  }
+  traverseDownTreeData(data, func, parent) {
+    var travData = Array.isArray(data) ? data : [data];
+    for (let nodeData of travData) {
+        if (func.call(this, nodeData, parent) === false)
+            return false;
+        if (!nodeData.children || !Array.isArray(nodeData.children))
+          continue;
 
-  traverseUpTree(fromNode) {
-    const sibling = fromNode.previousElementSibling;
-    if (sibling && sibling instanceof UiJsTreeNode)
-      return sibling;
-    return fromNode.closest('ui-js-tree-node');
+        for (let childNodeData of nodeData.children) {
+            if (this.traverseDownTreeData(childNodeData, func, nodeData) === false)
+                break;
+        }
+    }
   }
 
   setSelected(nodeElement) {
