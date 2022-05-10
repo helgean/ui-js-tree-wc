@@ -22,20 +22,26 @@ const tpl = template`
       display: none;
     }
 
-    ui-js-tree-node.parent[collapsed]::before {
-      border-top: var(--tree-arrow-size) solid transparent;
-      border-bottom: var(--tree-arrow-size) solid transparent;
-      border-left: var(--tree-arrow-size) solid var(--tree-prefix-color);
+    ui-js-tree-node > .caret {
+      fill: var(--tree-node-collapse-icon-color);
+      color: var(--tree-node-collapse-icon-color);
+      display: inline-block;
+      align-self: center;
+      width: var(--tree-node-arrow-size, 20px);
+      height: var(--tree-node-arrow-size, 20px);
     }
 
-    ui-js-tree-node.parent::before {
-      border-left: var(--tree-arrow-size) solid transparent;
-      border-right: var(--tree-arrow-size) solid transparent;
-      border-top: var(--tree-arrow-size) solid var(--tree-prefix-color);
+    ui-js-tree-node.parent[collapsed] > .caret {
+      background: var(--tree-node-collapsed-icon-url, url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>'));
+    }
+
+    ui-js-tree-node.parent > .caret {
+      background: var(--tree-node-expanded-icon-url, url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>'));
     }
 
     ui-js-tree-node > span {
       display: inline-block;
+      white-space: nowrap;
       padding: var(--tree-node-text-padding, 2px);
       margin: var(--tree-node-text-margin, 0);
       border-radius: var(--tree-node-border-radius, 2px);
@@ -46,14 +52,6 @@ const tpl = template`
     ui-js-tree-node > span:hover {
       background-color: var(--tree-node-background-hover);
       color: var(--tree-node-text-color-hover);
-    }
-
-    ui-js-tree-node::before {
-      content: " ";
-      box-sizing: border-box;
-      border: var(--tree-arrow-size) solid transparent;
-      display: inline-block;
-      vertical-align: middle;
     }
 
     ui-js-tree-node.parent {
@@ -70,7 +68,8 @@ const tpl = template`
     }
 
     ui-js-tree-node {
-      display: block;
+      display: grid;
+      grid-template-columns: var(--tree-node-caret-size, 20px) 1fr;
     }
   </style>
 `;

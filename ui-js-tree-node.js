@@ -2,6 +2,7 @@ import { template } from './lib/ui-js-lib.js';
 import { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
 
 const tpl = template`
+  <i class="caret"></i>
   <span>${'text'}</span>
 `;
 
@@ -32,13 +33,15 @@ export class UiJsTreeNode extends HTMLElement {
 
     this.addEventListener('click', ev => {
       ev.stopPropagation();
-      this.collapsed = !this.collapsed;
-      this.dispatchEvent(new CustomEvent('ui-js-tree-node-click', {
-        bubbles: true,
-        detail: {
-          data: this.data
-        }
-      }));
+      if (ev.target === this.querySelector('i.caret'))
+        this.collapsed = !this.collapsed;
+      else
+        this.dispatchEvent(new CustomEvent('ui-js-tree-node-click', {
+          bubbles: true,
+          detail: {
+            data: this.data
+          }
+        }));
     });
   }
 
