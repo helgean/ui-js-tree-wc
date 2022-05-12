@@ -3,7 +3,7 @@ import { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
 
 const tpl = template`
   <i class="caret"></i>
-  <span>${'text'}</span>
+  <span class="ui-js-tree-node-text">${'text'}</span>
 `;
 
 export class UiJsTreeNode extends HTMLElement {
@@ -18,10 +18,16 @@ export class UiJsTreeNode extends HTMLElement {
   async connectedCallback() {
     this._text = this.data.text || this.getAttribute('text') || this.dataset.text || this.innerText;
     this._value = this.data.value || this.getAttribute('value') || this.dataset.value || this._text;
+    this._title = this.data.title || this.getAttribute('title') || this.dataset.title;
 
     tpl(this).render(this);
 
     this.setAttribute('tabindex', '-1');
+    this.setAttribute('role', 'treeitem');
+    this.setAttribute('aria-label', this._text);
+    if (this._title) {
+      this.querySelector('.ui-js-tree-node-text').setAttribute('title', this._title);
+    }
 
     if (this.isParent && !this.hasAttribute('collapsed') && this.level > this._expandToLevel)
       this.setAttribute('collapsed', '');

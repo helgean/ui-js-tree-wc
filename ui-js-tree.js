@@ -67,6 +67,14 @@ const tpl = template`
       color: var(--tree-node-selected-text-color);
     }
 
+    ui-js-tree-node:focus {
+      outline: none;
+    }
+
+    ui-js-tree-node:focus > span {
+      box-shadow: inset 0 0 1px var(--tree-node-focused-border-width, 1px) var(--tree-node-focused-border-contrast-color, #336688), inset 0 0 2px var(--tree-node-focused-border-contrast-width, 2px) var(--tree-node-focused-border-contrast-color, white), 0 0 1px var(--tree-node-focused-border-width, 1px) var(--tree-node-focused-border-color, #336688);
+    }
+
     ui-js-tree-node {
       display: grid;
       grid-template-columns: var(--tree-node-caret-size, 20px) 1fr;
@@ -82,6 +90,7 @@ export class UiJsTree extends HTMLElement {
     this.classList.add('tree-view');
 
     this.selected = null;
+    this.focused = null;
     this.nodeMap = new WeakMap();
     this.initialLevel = 99;
     this.defaultNodeRenderFn = function(data) {
@@ -97,16 +106,28 @@ export class UiJsTree extends HTMLElement {
         firstNode: ['Home'],
         lastNode: ['End'],
         collapse: ['ArrowLeft', 'Left', '-'],
-        expand: ['ArrowRight', 'Right', '+'],
+        expand: ['+'],
+        expandOrFirstChild: ['ArrowRight', 'Right'],
         toggle: [' ', 'Enter']
     };
   }
 
   async connectedCallback() {
 
+    this.setAttribute('role', 'tree');
+
     this.lazy = this.getAttribute('lazy-load') == 'true';
 
     this.buildNodeMapFromDescendants();
+
+    this.addEventListener('focusout', ev => {
+      this.focused = null;
+    });
+
+    this.addEventListener('focusin', ev => {
+      if (!this.focused && this.selected)
+        this.selected.focus();
+    });
 
     this.addEventListener('keydown', ev => {
 
@@ -121,7 +142,9 @@ export class UiJsTree extends HTMLElement {
           ev.preventDefault();
       }
 
-      if (this.keyMap.nextNode.indexOf(ev.key) > -1)
+      if (this.keyMap.expandOrFirstChild.indexOf(ev.key) > -1)
+        this.expandOrFirstChild();
+      else if (this.keyMap.nextNode.indexOf(ev.key) > -1)
         this.nextNode();
       else if (this.keyMap.prevNode.indexOf(ev.key) > -1)
         this.prevNode();
@@ -144,14 +167,25 @@ export class UiJsTree extends HTMLElement {
 
   load(treeData) {
     tpl(this).render(this.shadow);
+    this.data = treeData;
     // generate tree node elements
     const levelExpand = this.hasAttribute("expanded-level") ? (parseInt(this.getAttribute("expanded-level")) || 2) : 2;
     this.shadow.appendChild(new UiJsTreeNodeContainer(treeData, levelExpand, 0, this.lazy));
     this.buildNodeMapFromDescendants();
   }
 
+  reload() {
+    if (this.data) {
+      tpl(this).render(this.shadow);
+      // generate tree node elements
+      const levelExpand = this.hasAttribute("expanded-level") ? (parseInt(this.getAttribute("expanded-level")) || 2) : 2;
+      this.shadow.appendChild(new UiJsTreeNodeContainer(this.data, levelExpand, 0, this.lazy));
+      this.buildNodeMapFromDescendants();
+    }
+  }
+
   buildNodeMapFromDescendants() {
-    var nodes = this.querySelectorAll('ui-js-tree-node');
+    var nodes = this.shadow.querySelectorAll('ui-js-tree-node');
     this.nodeList = [...nodes];
     this.nodeMap = this.nodeList.reduce((acc, cur) => {
       acc.set(cur.data, cur);
@@ -181,9 +215,12 @@ export class UiJsTree extends HTMLElement {
   setSelected(nodeElement) {
     if (!nodeElement)
       return;
-    if (this.selected)
+    if (this.selected) {
         this.selected.classList.remove('selected');
+        nodeElement.removeAttribute('aria-selected');
+    }
     nodeElement.classList.add('selected');
+    nodeElement.setAttribute('aria-selected', true);
     this.selected = nodeElement;
     this.selected.focus();
     this.dispatchEvent(new CustomEvent('ui-js-tree-node-selected', {
@@ -193,6 +230,29 @@ export class UiJsTree extends HTMLElement {
         data: this.selected.data
       }
     }));
+  }
+
+  setFocused(nodeElement) {
+    if (!nodeElement)
+      return;
+    this.focused = nodeElement;
+    nodeElement.focus();
+    this.dispatchEvent(new CustomEvent('ui-js-tree-node-focused', {
+      bubbles: true,
+      detail: {
+        node: this.focused,
+        data: this.focused.data
+      }
+    }));
+  }
+
+  /**
+   * Find node by predicate
+   * @param {*} predicate, example predicate: node => node.data.id === 123
+   * @returns first node where predicate returns true, undefined otherwise
+   */
+  findNodeBy(predicate) {
+    return this.nodeList.find(predicate);
   }
 
   findNextNode(fromNode) {
@@ -208,38 +268,47 @@ export class UiJsTree extends HTMLElement {
   }
 
   nextNode() {
-    const nextNode = this.findNextNode(this.selected || this);
-    this.setSelected(nextNode);
+    const nextNode = this.findNextNode(this.focused || this.selected || this);
+    this.setFocused(nextNode);
   }
 
   prevNode() {
-    const prevNode = this.findPrevNode(this.selected || this);
-    this.setSelected(prevNode);
+    const prevNode = this.findPrevNode(this.focused || this.selected || this);
+    this.setFocused(prevNode);
   }
 
   firstNode() {
     const firstNode = this.nodeList.length > 0 ? this.nodeList[0] : undefined;
-    this.setSelected(firstNode);
+    this.setFocused(firstNode);
   }
 
   lastNode() {
     const lastNode = this.nodeList.length - 1 >= 0 ? this.nodeList[this.nodeList.length - 1] : undefined;
-    this.setSelected(lastNode);
+    this.setFocused(lastNode);
   }
 
   collapseNode() {
-    if (this.selected)
-      this.selected.collapsed = true;
+    if (this.focused)
+      this.focused.collapsed = true;
   }
 
   expandNode() {
-    if (this.selected)
-      this.selected.collapsed = false;
+    if (this.focused)
+      this.focused.collapsed = false;
+  }
+
+  expandOrFirstChild() {
+    if (this.focused) {
+      if (this.focused.collapsed)
+        this.expandNode();
+      else if (this.focused.isParent)
+        this.nextNode();
+    }
   }
 
   toggleState() {
-    if (this.selected)
-      this.selected.collapsed = !this.selected.collapsed;
+    if (this.focused && this.selected != this.focused)
+      this.setSelected(this.focused);
   }
 
 }

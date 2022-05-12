@@ -30,11 +30,14 @@
   </style>
 </head>
 <body>
+  <button onclick="findNode3()">Find node 3</button>
   <ui-js-tree expanded-level="1" lazy-load="true"></ui-js-tree>
 
   <script type="module">
     document.querySelector('ui-js-tree').load([{
       text: 'node 1',
+      value: 1,
+      title: 'The first node of many',
       children: [{
         text: 'node 1-1',
       }, {
@@ -60,6 +63,19 @@
     document.querySelector('ui-js-tree').addEventListener('ui-js-tree-node-selected', ev => {
       console.log(ev.detail.data);
     });
+
+    document.querySelector('ui-js-tree').addEventListener('ui-js-tree-node-focused', ev => {
+      console.log(`focused: ${ev.detail.node.text}`);
+    });
+  </script>
+  <script>
+
+    function findNode3() {
+      const tree = document.querySelector('ui-js-tree');
+      const node3 = tree.findNodeBy(node => node.text == 'node 3');
+      tree.setSelected(node3);
+    }
+
   </script>
 </body>
 </html>

@@ -31,6 +31,7 @@ export class UiJsTreeNodeContainer extends HTMLElement {
       this.appendChild(new UiJsTreeNode(nodeData, this._expandToLevel, this.level + 1, this.lazy));
     }
     this._loaded = true;
+    this.setAttribute('role', 'group');
   }
 
   set hidden(value) {
