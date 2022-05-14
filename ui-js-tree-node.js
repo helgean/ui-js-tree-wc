@@ -39,6 +39,8 @@ export class UiJsTreeNode extends HTMLElement {
 
     this.addEventListener('click', ev => {
       ev.stopPropagation();
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
       if (ev.target === this.querySelector('i.caret'))
         this.collapsed = !this.collapsed;
       else

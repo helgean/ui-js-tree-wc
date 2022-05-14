@@ -116,10 +116,10 @@ export class UiJsTree extends HTMLElement {
 
     this.setAttribute('role', 'tree');
 
-    this.lazy = this.getAttribute('lazy-load') == 'true';
+    this.lazy = this.hasAttribute('lazy-load');
     this.multiSelect = this.hasAttribute('multi-select');
 
-    this.buildNodeMapFromDescendants();
+    this._buildNodeMapFromDescendants();
 
     this.addEventListener('focusout', ev => {
       this.focused = null;
@@ -178,12 +178,12 @@ export class UiJsTree extends HTMLElement {
       // generate tree node elements
       const levelExpand = this.hasAttribute("expanded-level") ? (parseInt(this.getAttribute("expanded-level")) || 2) : 2;
       this.shadow.appendChild(new UiJsTreeNodeContainer(this.data, levelExpand, 0, this.lazy));
-      this.buildNodeMapFromDescendants();
+      this._buildNodeMapFromDescendants();
     }
   }
 
-  buildNodeMapFromDescendants() {
-    var nodes = this.shadow.querySelectorAll('ui-js-tree-node');
+  _buildNodeMapFromDescendants() {
+    const nodes = this.shadow.querySelectorAll('ui-js-tree-node');
     this.nodeList = [...nodes];
     this.nodeMap = this.nodeList.reduce((acc, cur) => {
       acc.set(cur.data, cur);
@@ -196,7 +196,7 @@ export class UiJsTree extends HTMLElement {
   }
 
   traverseDownTreeData(data, func, parent) {
-    var travData = Array.isArray(data) ? data : [data];
+    const travData = Array.isArray(data) ? data : [data];
     for (let nodeData of travData) {
         if (func.call(this, nodeData, parent) === false)
             return false;
