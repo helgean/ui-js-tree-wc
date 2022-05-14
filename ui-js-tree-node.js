@@ -45,7 +45,8 @@ export class UiJsTreeNode extends HTMLElement {
         this.dispatchEvent(new CustomEvent('ui-js-tree-node-click', {
           bubbles: true,
           detail: {
-            data: this.data
+            data: this.data,
+            originalEvent: ev
           }
         }));
     });

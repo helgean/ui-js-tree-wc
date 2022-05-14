@@ -1,6 +1,6 @@
 import { template } from './lib/ui-js-lib.js';
 import { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
-export { UiJsTreeNodeContainer } from './ui-js-tree-node-container.js';
+export { UiJsTreeNodeContainer };
 export { UiJsTreeNode } from './ui-js-tree-node.js';
 
 const tpl = template`
@@ -89,7 +89,7 @@ export class UiJsTree extends HTMLElement {
     this.setAttribute('tabindex', '0');
     this.classList.add('tree-view');
 
-    this.selected = null;
+    this.selection = [];
     this.focused = null;
     this.nodeMap = new WeakMap();
     this.initialLevel = 99;
@@ -117,6 +117,7 @@ export class UiJsTree extends HTMLElement {
     this.setAttribute('role', 'tree');
 
     this.lazy = this.getAttribute('lazy-load') == 'true';
+    this.multiSelect = this.hasAttribute('multi-select');
 
     this.buildNodeMapFromDescendants();
 
@@ -126,7 +127,7 @@ export class UiJsTree extends HTMLElement {
 
     this.addEventListener('focusin', ev => {
       if (!this.focused && this.selected)
-        this.selected.focus();
+        this.setFocused(this.selected);
     });
 
     this.addEventListener('keydown', ev => {
@@ -144,34 +145,31 @@ export class UiJsTree extends HTMLElement {
 
       if (this.keyMap.expandOrFirstChild.indexOf(ev.key) > -1)
         this.expandOrFirstChild();
-      else if (this.keyMap.nextNode.indexOf(ev.key) > -1)
-        this.nextNode();
-      else if (this.keyMap.prevNode.indexOf(ev.key) > -1)
-        this.prevNode();
-      else if (this.keyMap.firstNode.indexOf(ev.key) > -1)
-        this.firstNode();
-      else if (this.keyMap.lastNode.indexOf(ev.key) > -1)
-        this.lastNode();
-      else if (this.keyMap.collapse.indexOf(ev.key) > -1)
+      else if (this.keyMap.nextNode.indexOf(ev.key) > -1) {
+        this.nextNode(ev.shiftKey);
+      } else if (this.keyMap.prevNode.indexOf(ev.key) > -1) {
+        this.prevNode(ev.shiftKey);
+      } else if (this.keyMap.firstNode.indexOf(ev.key) > -1) {
+        this.firstNode(ev.shiftKey);
+      } else if (this.keyMap.lastNode.indexOf(ev.key) > -1) {
+        this.lastNode(ev.shiftKey);
+      } else if (this.keyMap.collapse.indexOf(ev.key) > -1) {
         this.collapseNode();
-      else if (this.keyMap.expand.indexOf(ev.key) > -1)
+      } else if (this.keyMap.expand.indexOf(ev.key) > -1) {
         this.expandNode();
-      else if (this.keyMap.toggle.indexOf(ev.key) > -1)
+      } else if (this.keyMap.toggle.indexOf(ev.key) > -1) {
         this.toggleState();
+      }
     });
 
     this.shadow.addEventListener('ui-js-tree-node-click', ev => {
-      this.setSelected(ev.target);
+      this.toggleSelection(ev.target, this.multiSelect && ev.detail.originalEvent.ctrlKey);
     });
   }
 
   load(treeData) {
-    tpl(this).render(this.shadow);
     this.data = treeData;
-    // generate tree node elements
-    const levelExpand = this.hasAttribute("expanded-level") ? (parseInt(this.getAttribute("expanded-level")) || 2) : 2;
-    this.shadow.appendChild(new UiJsTreeNodeContainer(treeData, levelExpand, 0, this.lazy));
-    this.buildNodeMapFromDescendants();
+    this.reload();
   }
 
   reload() {
@@ -212,24 +210,57 @@ export class UiJsTree extends HTMLElement {
     }
   }
 
-  setSelected(nodeElement) {
+  toggleSelection(nodeElement, multiselect) {
     if (!nodeElement)
       return;
-    if (this.selected) {
-        this.selected.classList.remove('selected');
-        nodeElement.removeAttribute('aria-selected');
+
+    const selectIndex = this.selection.indexOf(nodeElement);
+    const wasSelected = selectIndex > -1;
+
+    if (!multiselect)
+      this.clearSelection();
+
+    if (wasSelected && multiselect) {
+      this._deselect(nodeElement, selectIndex);
+    } else {
+      this._select(nodeElement);
+      nodeElement.focus();
     }
-    nodeElement.classList.add('selected');
-    nodeElement.setAttribute('aria-selected', true);
-    this.selected = nodeElement;
-    this.selected.focus();
-    this.dispatchEvent(new CustomEvent('ui-js-tree-node-selected', {
+
+    this.dispatchEvent(new CustomEvent(wasSelected ? 'ui-js-tree-node-deselected' : 'ui-js-tree-node-selected', {
       bubbles: true,
       detail: {
-        node: this.selected,
-        data: this.selected.data
+        node: nodeElement
       }
     }));
+
+    this.dispatchEvent(new CustomEvent('ui-js-tree-node-selection-change', {
+      bubbles: true,
+      detail: {
+        node: nodeElement,
+        selected: this.isSelected(nodeElement)
+      }
+    }));
+  }
+
+  _select(nodeElement) {
+    this.selection.push(nodeElement);
+    nodeElement.classList.add('selected');
+    nodeElement.setAttribute('aria-selected', '');
+  }
+
+  _deselect(nodeElement, selectedIndex) {
+    this.selection.splice(selectedIndex);
+    nodeElement.classList.remove('selected');
+    nodeElement.removeAttribute('aria-selected');
+  }
+
+  clearSelection() {
+    for (let selected of this.selection) {
+      selected.classList.remove('selected');
+      selected.removeAttribute('aria-selected');
+    }
+    this.selection = [];
   }
 
   setFocused(nodeElement) {
@@ -240,10 +271,21 @@ export class UiJsTree extends HTMLElement {
     this.dispatchEvent(new CustomEvent('ui-js-tree-node-focused', {
       bubbles: true,
       detail: {
-        node: this.focused,
-        data: this.focused.data
+        node: this.focused
       }
     }));
+  }
+
+  isSelected(nodeElement) {
+    return nodeElement.classList.contains('selected');
+  }
+
+  nodeIndex(nodeElement) {
+    return this.nodeList.indexOf(nodeElement);
+  }
+
+  getNode(index) {
+    return this.nodeList[index];
   }
 
   /**
@@ -267,23 +309,48 @@ export class UiJsTree extends HTMLElement {
     return index >= 0 ? nodeList[index] : undefined;
   }
 
-  nextNode() {
+  nextNode(select) {
     const nextNode = this.findNextNode(this.focused || this.selected || this);
     this.setFocused(nextNode);
+    if (select) this.toggleState();
   }
 
-  prevNode() {
+  prevNode(select) {
     const prevNode = this.findPrevNode(this.focused || this.selected || this);
     this.setFocused(prevNode);
+    if (select) this.toggleState();
   }
 
-  firstNode() {
+  firstNode(select) {
     const firstNode = this.nodeList.length > 0 ? this.nodeList[0] : undefined;
+    if (select && firstNode) {
+      const startIndex = 0;
+      const endIndex = this.nodeIndex(this.focused || this.selected);
+      for (let i=startIndex; i<=endIndex; i++) {
+        const node = this.getNode(i);
+        if (this.isSelected(node))
+          this._deselect(this.getNode(i), i);
+        else
+          this._select(this.getNode(i));
+      }
+    }
     this.setFocused(firstNode);
+
   }
 
-  lastNode() {
+  lastNode(select) {
     const lastNode = this.nodeList.length - 1 >= 0 ? this.nodeList[this.nodeList.length - 1] : undefined;
+    if (select && lastNode) {
+      const startIndex = this.nodeIndex(this.focused || this.selected);
+      const endIndex = this.nodeList.length - 1;
+      for (let i=startIndex; i<=endIndex; i++) {
+        const node = this.getNode(i);
+        if (this.isSelected(node))
+          this._deselect(this.getNode(i), i);
+        else
+          this._select(this.getNode(i));
+      }
+    }
     this.setFocused(lastNode);
   }
 
@@ -307,8 +374,11 @@ export class UiJsTree extends HTMLElement {
   }
 
   toggleState() {
-    if (this.focused && this.selected != this.focused)
-      this.setSelected(this.focused);
+    this.toggleSelection(this.focused, this.multiSelect);
+  }
+
+  get selected() {
+    return Array.isArray(this.selection) && this.selection.length > 0 ? this.selection[0] : undefined;
   }
 
 }
