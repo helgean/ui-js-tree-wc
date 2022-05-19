@@ -165,6 +165,10 @@ export class UiJsTree extends HTMLElement {
     this.shadow.addEventListener('ui-js-tree-node-click', ev => {
       this.toggleSelection(ev.target, this.multiSelect && ev.detail.originalEvent.ctrlKey);
     });
+
+    this.shadow.addEventListener('ui-js-tree-container-load', () => {
+      this.updateNodes();
+    });
   }
 
   load(treeData) {
@@ -180,6 +184,10 @@ export class UiJsTree extends HTMLElement {
       this.shadow.appendChild(new UiJsTreeNodeContainer(this.data, levelExpand, 0, this.lazy));
       this._buildNodeMapFromDescendants();
     }
+  }
+
+  updateNodes() {
+    this._buildNodeMapFromDescendants();
   }
 
   _buildNodeMapFromDescendants() {
@@ -198,7 +206,7 @@ export class UiJsTree extends HTMLElement {
   traverseDownTreeData(data, func, parent) {
     const travData = Array.isArray(data) ? data : [data];
     for (let nodeData of travData) {
-        if (func.call(this, nodeData, parent) === false)
+        if (func(nodeData, parent) === false)
             return false;
         if (!nodeData.children || !Array.isArray(nodeData.children))
           continue;
@@ -241,6 +249,8 @@ export class UiJsTree extends HTMLElement {
         selected: this.isSelected(nodeElement)
       }
     }));
+
+    console.log(this.selection);
   }
 
   _select(nodeElement) {
@@ -250,7 +260,7 @@ export class UiJsTree extends HTMLElement {
   }
 
   _deselect(nodeElement, selectedIndex) {
-    this.selection.splice(selectedIndex);
+    this.selection.splice(selectedIndex, 1);
     nodeElement.classList.remove('selected');
     nodeElement.removeAttribute('aria-selected');
   }
@@ -289,12 +299,27 @@ export class UiJsTree extends HTMLElement {
   }
 
   /**
-   * Find node by predicate
+   * Find node by predicate if node is loaded
    * @param {*} predicate, example predicate: node => node.data.id === 123
    * @returns first node where predicate returns true, undefined otherwise
    */
   findNodeBy(predicate) {
     return this.nodeList.find(predicate);
+  }
+
+  findAndLoadNodeByData(predicate, expandTo) {
+    let foundNode = undefined;
+
+    this.traverseDownTreeData(this.data, (nodeData, parent) => {
+      if (!this.nodeMap.has(nodeData))
+        this.nodeMap.get(parent).loadChildren(expandTo);
+      if (predicate(nodeData)) {
+        foundNode = this.nodeMap.get(nodeData);
+        return false;
+      }
+    });
+
+    return foundNode;
   }
 
   findNextNode(fromNode) {

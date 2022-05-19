@@ -33,6 +33,7 @@
 </head>
 <body>
   <button onclick="findNode3()">Find node 3</button>
+  <button onclick="findNodeDeep()">Find node 1-2-2</button>
   <ui-js-tree expanded-level="1" lazy-load multi-select></ui-js-tree>
 
   <script type="module">
@@ -75,7 +76,17 @@
     function findNode3() {
       const tree = document.querySelector('ui-js-tree');
       const node3 = tree.findNodeBy(node => node.text == 'node 3');
-      tree.setSelected(node3);
+      tree.setFocused(node3);
+      tree.toggleSelection(node3, false);
+    }
+
+    function findNodeDeep() {
+      const tree = document.querySelector('ui-js-tree');
+      const node = tree.findAndLoadNodeByData(nodeData => nodeData.text == 'node 1-2-2', true);
+      if (node) {
+        tree.setFocused(node);
+        tree.toggleSelection(node, false);
+      }
     }
 
   </script>

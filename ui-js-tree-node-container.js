@@ -20,18 +20,22 @@ export class UiJsTreeNodeContainer extends HTMLElement {
 
       this.parentElement.addEventListener('ui-js-tree-node-collapse-change', ev => {
         if (!this._loaded && ev.detail.collapsed === false)
-          this.load();
+          this.load(true);
         this.hidden = ev.detail.collapsed;
       });
     }
   }
 
-  load() {
+  load(fireEvent) {
     for (let nodeData of this._data) {
       this.appendChild(new UiJsTreeNode(nodeData, this._expandToLevel, this.level + 1, this.lazy));
     }
     this._loaded = true;
     this.setAttribute('role', 'group');
+    if (fireEvent)
+      this.dispatchEvent(new CustomEvent('ui-js-tree-container-load', {
+        bubbles: true
+      }));
   }
 
   set hidden(value) {
@@ -43,6 +47,10 @@ export class UiJsTreeNodeContainer extends HTMLElement {
 
   get hidden() {
     return this.parentElement ? this.parentElement.hasAttribute('collapsed') : false;
+  }
+
+  get loaded() {
+    return this._loaded;
   }
 }
 

@@ -54,6 +54,13 @@ export class UiJsTreeNode extends HTMLElement {
     });
   }
 
+  loadChildren(expandTo) {
+    if (!this.container.loaded)
+      this.container.load(true);
+    if (expandTo && this.collapsed)
+      this.collapsed = false;
+  }
+
   get data() {
     return this._data;
   }
