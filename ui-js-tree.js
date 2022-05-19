@@ -406,6 +406,10 @@ export class UiJsTree extends HTMLElement {
     return Array.isArray(this.selection) && this.selection.length > 0 ? this.selection[0] : undefined;
   }
 
+  get selection() {
+    return Array.isArray(this.selection) && this.selection.length > 0 ? this.selection : [];
+  }
+
 }
 
 customElements.define('ui-js-tree', UiJsTree);
