@@ -406,7 +406,7 @@ export class UiJsTree extends HTMLElement {
     return Array.isArray(this.selection) && this.selection.length > 0 ? this.selection[0] : undefined;
   }
 
-  get selection() {
+  get selections() {
     return Array.isArray(this.selection) && this.selection.length > 0 ? this.selection : [];
   }
 
