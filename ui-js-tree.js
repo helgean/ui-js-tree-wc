@@ -10,9 +10,16 @@ const tpl = template`
       --tree-arrow-size: var(--tree-node-collapse-arrow-size, 8px);
       cursor: var(--tree-node-cursor, pointer);
       outline: none;
+      display: grid;
+      grid-template-columns: var(--tree-node-caret-size, 20px) 1fr;
+      grid-template-rows: auto;
+      grid-template-areas:
+        "caret text"
+        "container container";
     }
 
     ui-js-tree-node-container {
+      grid-area: container;
       display: block;
       width: fit-content;
       padding-left: var(--tree-node-left-margin, --tree-arrow-size);
@@ -23,6 +30,7 @@ const tpl = template`
     }
 
     ui-js-tree-node > .caret {
+      grid-area: caret;
       fill: var(--tree-node-collapse-icon-color);
       color: var(--tree-node-collapse-icon-color);
       display: inline-block;
@@ -40,6 +48,8 @@ const tpl = template`
     }
 
     ui-js-tree-node > span {
+      grid-area: text;
+      color: var(--tree-node-text-color, inherit);
       display: inline-block;
       white-space: nowrap;
       padding: var(--tree-node-text-padding, 2px);
@@ -73,11 +83,6 @@ const tpl = template`
 
     ui-js-tree-node:focus > span {
       box-shadow: inset 0 0 1px var(--tree-node-focused-border-width, 1px) var(--tree-node-focused-border-contrast-color, #336688), inset 0 0 2px var(--tree-node-focused-border-contrast-width, 2px) var(--tree-node-focused-border-contrast-color, white), 0 0 1px var(--tree-node-focused-border-width, 1px) var(--tree-node-focused-border-color, #336688);
-    }
-
-    ui-js-tree-node {
-      display: grid;
-      grid-template-columns: var(--tree-node-caret-size, 20px) 1fr;
     }
   </style>
 `;

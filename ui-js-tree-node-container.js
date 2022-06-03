@@ -22,6 +22,16 @@ export class UiJsTreeNodeContainer extends HTMLElement {
         if (!this._loaded && ev.detail.collapsed === false)
           this.load(true);
         this.hidden = ev.detail.collapsed;
+        const descendContainers = this.querySelectorAll('ui-js-tree-node-container');
+        if (this.hidden) {
+          for (let cont of descendContainers)
+            cont.hidden = true;
+        } else {
+          for (let cont of descendContainers) {
+            if (!cont.hidden)
+              cont.hidden = false;
+          }
+        }
       });
     }
   }

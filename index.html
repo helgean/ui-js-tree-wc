@@ -8,19 +8,34 @@
   <script type="module" src="ui-js-tree.js"></script>
   <style>
     :root {
+      font-family: Helvetica, sans-serif;
+
       --tree-node-left-margin: 16px;
       --tree-node-arrow-size: 24px;
       --tree-node-selected-background-color: #155a92;
       --tree-node-selected-text-color: white;
       --tree-node-background-hover: #a2bfd6;
+      --tree-node-text-color: black;
       --tree-node-text-color-hover: black;
       --tree-node-text-padding: 4px;
       --tree-node-text-margin: 2px;
       --tree-node-text-font-family: Helvetica, sans-serif;
       --tree-node-text-font-size: inherit;
       --tree-node-border-radius: 3px;
+    }
+
+    .white-tree {
       --tree-node-collapsed-icon-url: url('chevron-right.svg');
       --tree-node-expanded-icon-url: url('chevron-down.svg');
+    }
+
+    .dark-tree {
+      --tree-node-collapsed-icon-url: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>');
+      --tree-node-expanded-icon-url: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+      --tree-node-selected-background-color: #82c0f3;
+      --tree-node-selected-text-color: black;
+      background-color: #333;
+      --tree-node-text-color: white;
     }
 
     ui-js-tree {
@@ -34,7 +49,10 @@
 <body>
   <button onclick="findNode3()">Find node 3</button>
   <button onclick="findNodeDeep()">Find node 1-2-2</button>
-  <ui-js-tree expanded-level="1" lazy-load multi-select></ui-js-tree>
+  <ui-js-tree class="white-tree" expanded-level="1" lazy-load multi-select></ui-js-tree>
+
+  <h3>Dark mode example:</h3>
+  <ui-js-tree class="dark-tree" expanded-level="1" lazy-load multi-select></ui-js-tree>
 
   <script type="module">
     let lots = [];
@@ -79,7 +97,8 @@
         text: 'node 4',
     }];
 
-    document.querySelector('ui-js-tree').load(treeData);
+    document.querySelector('ui-js-tree.white-tree').load(treeData);
+    document.querySelector('ui-js-tree.dark-tree').load(treeData);
 
     document.querySelector('ui-js-tree').addEventListener('ui-js-tree-node-selected', ev => {
       console.log(ev.detail.node.data);
